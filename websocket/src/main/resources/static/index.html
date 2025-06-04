@@ -1,0 +1,165 @@
+<!-- public chat -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+<h2>WebSocket Chat</h2>
+<input type="text" id="sender" placeholder="Your name" />
+<input type="text" id="content" placeholder="Message" />
+<button onclick="sendMessage()">Send</button>
+
+<ul id="messages"></ul>
+
+<script>
+    let stompClient = null;
+
+    function connect() {
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+            stompClient.subscribe('/topic/messages', function (msg) {
+                const message = JSON.parse(msg.body);
+                const li = document.createElement("li");
+                li.textContent = `${message.sender}: ${message.content} (${message.timestamp})`;
+                document.getElementById("messages").appendChild(li);
+            });
+        });
+    }
+
+    function sendMessage() {
+        const sender = document.getElementById("sender").value;
+        const content = document.getElementById("content").value;
+        stompClient.send("/app/chat.send", {}, JSON.stringify({ sender, content }));
+    }
+
+    connect();
+</script>
+</body>
+</html>
+
+<!--<!DOCTYPE html>-->
+<!--<html>-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Private Chat</title>-->
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: Arial, sans-serif;-->
+<!--        }-->
+<!--        #chatArea {-->
+<!--            margin-top: 20px;-->
+<!--        }-->
+<!--        #messageList li {-->
+<!--            margin-bottom: 5px;-->
+<!--        }-->
+<!--        .sent {-->
+<!--            color: blue;-->
+<!--        }-->
+<!--        .received {-->
+<!--            color: green;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+
+<!--<h2>Private Chat</h2>-->
+
+<!--<div>-->
+<!--    <label>Your Username:</label>-->
+<!--    <input type="text" id="username" placeholder="e.g., alice">-->
+<!--    <button onclick="connect()">Connect</button>-->
+<!--</div>-->
+
+<!--<div id="chatArea" style="display:none;">-->
+<!--    <p>Connected as: <span id="currentUser"></span></p>-->
+
+<!--    <label>To:</label>-->
+<!--    <input type="text" id="recipient" placeholder="e.g., bob"><br><br>-->
+
+<!--    <label>Message:</label>-->
+<!--    <input type="text" id="message" placeholder="Type a message">-->
+<!--    <button onclick="sendMessage()">Send</button>-->
+
+<!--    <h4>Messages:</h4>-->
+<!--    <ul id="messageList"></ul>-->
+<!--</div>-->
+
+<!--&lt;!&ndash; SockJS and STOMP libraries &ndash;&gt;-->
+<!--<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>-->
+<!--<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>-->
+
+<!--<script>-->
+<!--    let stompClient = null;-->
+<!--    let currentUser = null;-->
+
+<!--    function connect() {-->
+<!--        currentUser = document.getElementById('username').value.trim();-->
+<!--        if (!currentUser) {-->
+<!--            alert("Please enter a username to connect.");-->
+<!--            return;-->
+<!--        }-->
+
+<!--        console.log("Connecting as:", currentUser);-->
+<!--        const socket = new SockJS('/ws');-->
+<!--        stompClient = Stomp.over(socket);-->
+
+<!--        stompClient.connect({}, function () {-->
+<!--            // Register current user with server-->
+<!--            console.log("connected to server " + currentUser);-->
+<!--            stompClient.send("/app/register", {}, currentUser);-->
+
+<!--            // Subscribe to incoming private messages-->
+<!--            stompClient.subscribe('/user/queue/messages', function (msg) {-->
+<!--                console.log("Message received:", msg.body);-->
+<!--                const message = JSON.parse(msg.body);-->
+<!--                showMessage(`${message.sender} → you: ${message.content}`, false);-->
+<!--            });-->
+
+<!--            document.getElementById("chatArea").style.display = "block";-->
+<!--            document.getElementById("currentUser").innerText = currentUser;-->
+<!--        });-->
+<!--    }-->
+
+<!--    function sendMessage() {-->
+<!--        const recipient = document.getElementById('recipient').value.trim();-->
+<!--        console.log("recipient = ",recipient)-->
+<!--        const content = document.getElementById('message').value.trim();-->
+<!--        if (!recipient || !content) {-->
+<!--            alert("Please enter both recipient and message.");-->
+<!--            return;-->
+<!--        }-->
+
+<!--        const message = {-->
+<!--            sender: currentUser,-->
+<!--            recipient: recipient,-->
+<!--            content: content-->
+<!--        };-->
+
+<!--        // Send message to backend-->
+<!--        stompClient.send("/app/private-message", {}, JSON.stringify(message));-->
+
+<!--        // Display sent message in own chat area-->
+<!--        showMessage(`you → ${recipient}: ${content}`, true);-->
+
+<!--        document.getElementById('message').value = '';-->
+<!--    }-->
+
+<!--    function showMessage(text, isOwn) {-->
+<!--        const list = document.getElementById('messageList');-->
+<!--        const li = document.createElement('li');-->
+<!--        li.textContent = text;-->
+<!--        li.className = isOwn ? 'sent' : 'received';-->
+<!--        list.appendChild(li);-->
+<!--    }-->
+<!--</script>-->
+
+<!--</body>-->
+<!--</html>-->
+
+
+
